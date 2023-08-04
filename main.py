@@ -1,11 +1,10 @@
-import os
+import json
 import openai
 openai.organization = "org-0zjmYYl5jY0K38Kvn3wzK7At"
 openai.Model.list()
 import polars as pl
 import re
 import time
-from itertools import cycle
 
 data_main = {"state": [],
              "feature": []}
@@ -35,40 +34,42 @@ def ask_gpt(state):
     {"role": "system", "content": f"{initial_question}"},
     {"role": "user", "content": f"{prompt}"}
         ]
+    try:
+        # Call the chat completions endpoint
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # Use the appropriate chat model here
+        messages=messages
+        )
 
-    # Call the chat completions endpoint
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",  # Use the appropriate chat model here
-    messages=messages
-    )
+        # Extract the assistant's reply from the response
+        assistant_reply = response['choices'][0]['message']['content']
+        features = assistant_reply
 
-    # Extract the assistant's reply from the response
-    assistant_reply = response['choices'][0]['message']['content']
-    features = assistant_reply
+        # Custom Python function to split at numbers and either periods or closed parentheses
+        def split_string_at_numbers_and_periods_or_parentheses(s):
+            return re.split(r'[\n]', s)
 
-    # Custom Python function to split at numbers and either periods or closed parentheses
-    def split_string_at_numbers_and_periods_or_parentheses(s):
-        return re.split(r'[\d]', s)
-
-    # Use the custom function to split the string
-    features_sep = split_string_at_numbers_and_periods_or_parentheses(features)
-
-
-    for feature in features_sep:
+        # Use the custom function to split the string
+        features_sep = split_string_at_numbers_and_periods_or_parentheses(features)
 
 
-        data = {"state": state,
-                "feature": feature}
+        for feature in features_sep:
 
-        df = pl.DataFrame(data, schema = 
-                        {
-                            "state": str,
-                            "feature": str
-                        })
-        df_main.extend(df)
-        path = "/Users/ischneid/chat-gpt-us-state-dialectology/main_df.csv"
-        df_main.write_csv(path)
-    time.sleep(40)
+
+            data = {"state": state,
+                    "feature": feature}
+
+            df = pl.DataFrame(data, schema = 
+                            {
+                                "state": str,
+                                "feature": str
+                            })
+            df_main.extend(df)
+            path = "/Users/ischneid/chat-gpt-us-state-dialectology/main_df.csv"
+            df_main.write_csv(path)
+        time.sleep(60)
+    except (json.decoder.JSONDecodeError, openai.APIError, openai.RateLimitError):
+        pass
     return
 
 
