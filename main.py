@@ -5,6 +5,7 @@ openai.Model.list()
 import polars as pl
 import re
 import time
+import datetime
 
 data_main = {"state": [],
              "feature": []}
@@ -52,8 +53,12 @@ def ask_gpt(state):
         # Use the custom function to split the string
         features_sep = split_string_at_numbers_and_periods_or_parentheses(features)
 
+        # Using list comprehension to remove empty items
+        filtered_sep = [item for item in features_sep if item != '']
 
-        for feature in features_sep:
+
+
+        for feature in filtered_sep:
 
 
             data = {"state": state,
@@ -65,7 +70,8 @@ def ask_gpt(state):
                                 "feature": str
                             })
             df_main.extend(df)
-            path = "/Users/ischneid/chat-gpt-us-state-dialectology/main_df.csv"
+            today = datetime.date.today()
+            path = f"/Users/ischneid/chat-gpt-us-state-dialectology/state-dialect-dfs/main_df{today}.csv"
             df_main.write_csv(path)
         time.sleep(60)
     except (json.decoder.JSONDecodeError, openai.APIError, openai.RateLimitError):
@@ -78,7 +84,4 @@ def all_us_states_loop():
         ask_gpt(state)
     return
 
-
-index = [1, 2, 3]
-for i in index:
-    all_us_states_loop()
+all_us_states_loop()
