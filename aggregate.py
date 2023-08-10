@@ -4,7 +4,8 @@ import polars as pl
 
 def combine_csv_files(folder_path, output_filename):
     # Get a list of all CSV files in the specified folder
-    csv_files = glob.glob(f"{folder_path}/*.csv")
+    csv_files = glob.glob(folder_path + '/*.csv')
+
 
     if not csv_files:
         print("No CSV files found in the specified folder.")

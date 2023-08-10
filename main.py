@@ -6,15 +6,26 @@ import polars as pl
 import re
 import time
 import datetime
+import subprocess
 
-data_main = {"state": [],
+today = datetime.date.today()
+try:
+    df_main = pl.read_csv(f"/Users/ischneid/chat-gpt-us-state-dialectology/state-dialect-dfs/main_df{today}.csv")
+    completed_states = (df_main["state"])
+    list = completed_states.to_list()
+    completed_states = set(list)
+
+
+except FileNotFoundError:
+    data_main = {"state": [],
              "feature": []}
 
-df_main = pl.DataFrame(data_main, schema = 
+    df_main = pl.DataFrame(data_main, schema = 
                        {
                            "state": str,
                            "feature": str
                        })
+    print("I couldn't find it.")
 
 us_states = [
     'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 
@@ -24,6 +35,9 @@ us_states = [
     'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 
     'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
 ]
+
+remaining_states = [state for state in us_states if state not in completed_states]
+print(remaining_states)
 
 def ask_gpt(state):
     prompt = f"List 5 key linguistic features of {state} English"
@@ -70,18 +84,21 @@ def ask_gpt(state):
                                 "feature": str
                             })
             df_main.extend(df)
-            today = datetime.date.today()
             path = f"/Users/ischneid/chat-gpt-us-state-dialectology/state-dialect-dfs/main_df{today}.csv"
             df_main.write_csv(path)
         time.sleep(60)
-    except (json.decoder.JSONDecodeError, openai.APIError, openai.RateLimitError):
+    except (json.decoder.JSONDecodeError, openai.error.APIError, openai.error.RateLimitError):
         pass
     return
 
 
 def all_us_states_loop():
-    for state in us_states:
-        ask_gpt(state)
+    try:
+        for state in remaining_states:
+            ask_gpt(state)
+    except NameError:
+        for state in us_states:
+            ask_gpt(state)
     return
 
 all_us_states_loop()
