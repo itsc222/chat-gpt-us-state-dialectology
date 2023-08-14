@@ -6,7 +6,6 @@ import polars as pl
 import re
 import time
 import datetime
-import subprocess
 
 today = datetime.date.today()
 try:
